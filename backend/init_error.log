@@ -1,0 +1,7 @@
+Error: No module named 'PyPDF2'
+Traceback (most recent call last):
+  File "D:\Development\FC\SC\FastAPIBackend\main.py", line 35, in <module>
+    from pdf_extractor import extract_pdf_text
+  File "D:\Development\FC\SC\ScarppingAgent\pdf_extractor.py", line 1, in <module>
+    import PyPDF2
+ModuleNotFoundError: No module named 'PyPDF2'
