@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, Play, Database, Zap, Settings, ListPlus } from "lucide-react";
+import { Loader2, Play, Database, Settings, ListPlus } from "lucide-react";
 import { toast } from "sonner";
 import FieldsInput from "@/components/FieldsInput";
 import ResultsTable from "@/components/ResultsTable";
@@ -77,8 +77,8 @@ const Index = () => {
       <header className="flex-none border-b bg-white dark:bg-slate-900 z-20">
         <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Zap className="h-5 w-5 text-white" />
+            <div className="h-10 w-10 rounded-xl bg-blue-600/10 flex items-center justify-center border border-blue-100 dark:border-blue-900/20">
+              <img src="/web-crawler.png" alt="Logo" className="h-7 w-7 object-contain" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-tight">ScrapingAgent Pro</h1>
