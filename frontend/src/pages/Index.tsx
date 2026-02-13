@@ -4,18 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, Play, Database, Zap, Globe, FileText, Settings, ListPlus } from "lucide-react";
+import { Loader2, Play, Database, Zap, Settings, ListPlus } from "lucide-react";
 import { toast } from "sonner";
 import FieldsInput from "@/components/FieldsInput";
 import ResultsTable from "@/components/ResultsTable";
 import ExportButtons from "@/components/ExportButtons";
 
 const Index = () => {
-  const [sourceType, setSourceType] = useState<"Web" | "PDF">("Web");
   const [url, setUrl] = useState("");
-  const [pdfPath, setPdfPath] = useState("");
   const [maxPages, setMaxPages] = useState(5);
   const [presets, setPresets] = useState<string[]>([]);
   const [fields, setFields] = useState<string[]>([]);
@@ -28,7 +25,7 @@ const Index = () => {
     );
   };
 
-  const canRun = (sourceType === "Web" ? url.trim() : pdfPath.trim()) && (fields.length > 0 || presets.length > 0);
+  const canRun = url.trim() && (fields.length > 0 || presets.length > 0);
 
   const handleScrape = async () => {
     if (!canRun) return;
@@ -37,28 +34,36 @@ const Index = () => {
     setResults([]);
 
     try {
+      console.log("🚀 Starting scrape request...");
       const res = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          url: sourceType === "Web" ? url.trim() : undefined,
-          pdf_path: sourceType === "PDF" ? pdfPath.trim() : undefined,
-          source_type: sourceType,
+          url: url.trim(),
+          source_type: "Web",
           fields: fields.filter(f => f.trim()),
           max_pages: maxPages,
           presets: presets
         }),
       });
 
+      console.log("📡 Response status:", res.status, res.statusText);
+
       if (!res.ok) {
         const errData = await res.json();
+        console.error("❌ Error response:", errData);
         throw new Error(errData.detail || `Server error: ${res.status}`);
       }
 
       const data = await res.json();
+      console.log("✅ Full API response:", data);
+      console.log("📊 Data array:", data.data);
+      console.log("📈 Data length:", data.data?.length);
+
       setResults(data.data);
       toast.success(`Successfully analyzed ${data.data.length} items`);
     } catch (error: any) {
+      console.error("💥 Scrape error:", error);
       toast.error(error.message || "Failed to connect to scraping engine");
       console.error(error);
     } finally {
@@ -101,74 +106,31 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-5">
-                {/* Source Selection */}
-                <div className="space-y-2">
-                  <RadioGroup
-                    value={sourceType}
-                    onValueChange={(v: any) => setSourceType(v)}
-                    className="grid grid-cols-2 gap-3"
-                  >
-                    <div>
-                      <RadioGroupItem value="Web" id="web" className="peer sr-only" />
-                      <Label
-                        htmlFor="web"
-                        className="flex items-center justify-center gap-2 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 hover:bg-slate-50 dark:hover:bg-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/50 dark:peer-data-[state=checked]:bg-blue-500/10 cursor-pointer transition-all"
-                      >
-                        <Globe className="h-3.5 w-3.5" />
-                        <span className="text-xs font-bold">Web</span>
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="PDF" id="pdf" className="peer sr-only" />
-                      <Label
-                        htmlFor="pdf"
-                        className="flex items-center justify-center gap-2 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 hover:bg-slate-50 dark:hover:bg-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50/50 dark:peer-data-[state=checked]:bg-blue-500/10 cursor-pointer transition-all"
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        <span className="text-xs font-bold">PDF</span>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {/* Dynamic Inputs */}
-                {sourceType === "Web" ? (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-left-1 duration-200">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="url" className="text-[10px] font-bold text-slate-400 uppercase">Target URL</Label>
-                      <Input
-                        id="url"
-                        placeholder="https://example.com"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        className="h-9 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-[10px] font-bold text-slate-400 uppercase">Depth</Label>
-                        <span className="text-[10px] font-mono font-bold text-blue-600">{maxPages} pages</span>
-                      </div>
-                      <Slider
-                        value={[maxPages]}
-                        onValueChange={(v) => setMaxPages(v[0])}
-                        max={50} min={1} step={1}
-                        className="py-1"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-left-1 duration-200">
-                    <Label htmlFor="pdfPath" className="text-[10px] font-bold text-slate-400 uppercase">Local path</Label>
+                {/* URL Input */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="url" className="text-[10px] font-bold text-slate-400 uppercase">Target URL</Label>
                     <Input
-                      id="pdfPath"
-                      placeholder="C:/Documents/report.pdf"
-                      value={pdfPath}
-                      onChange={(e) => setPdfPath(e.target.value)}
-                      className="h-9 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                      id="url"
+                      placeholder="https://example.com"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      className="h-9 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:ring-blue-500"
                     />
                   </div>
-                )}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase">Depth</Label>
+                      <span className="text-[10px] font-mono font-bold text-blue-600">{maxPages} pages</span>
+                    </div>
+                    <Slider
+                      value={[maxPages]}
+                      onValueChange={(v) => setMaxPages(v[0])}
+                      max={50} min={1} step={1}
+                      className="py-1"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -258,6 +220,10 @@ const Index = () => {
                     </div>
                     <h3 className="text-xs font-bold text-slate-900 dark:text-white mb-1">Awaiting Data</h3>
                     <p className="text-[11px] text-slate-500 font-medium max-w-[200px]">Strategic intelligence will appear here once the engine starts.</p>
+                    {/* Debug info */}
+                    <div className="mt-4 text-[10px] text-slate-400 font-mono">
+                      Debug: results.length = {results.length} | loading = {loading.toString()}
+                    </div>
                   </div>
                 )}
               </CardContent>

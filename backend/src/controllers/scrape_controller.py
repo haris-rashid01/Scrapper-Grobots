@@ -5,12 +5,12 @@ from fastapi import HTTPException
 from src.models.scrape import ScrapeRequest, ScrapeResponse, MetaData
 from src.services.scraper import crawl_site
 from src.services.extractor import extract_fields_llm
-from src.services.pdf_extractor import extract_pdf_text
+
 
 logger = logging.getLogger("fastapi")
 
 async def process_scrape_request(request: ScrapeRequest) -> ScrapeResponse:
-    if not crawl_site or not extract_fields_llm or not extract_pdf_text:
+    if not crawl_site or not extract_fields_llm:
         logger.error("Agent modules not loaded. Cannot process request.")
         raise HTTPException(status_code=500, detail="Backend configuration error: Agent modules missing.")
 
@@ -36,16 +36,14 @@ async def process_scrape_request(request: ScrapeRequest) -> ScrapeResponse:
             logger.info(f"[Agent] {msg}")
 
         # 1. Get Text based on source type
-        if request.source_type == "PDF":
-            if not request.pdf_path:
-                raise HTTPException(status_code=400, detail="pdf_path is required for PDF source.")
-            logger.info(f"Extracting PDF: {request.pdf_path}")
-            scraped_text = extract_pdf_text(request.pdf_path)
-        else: # Web
-            if not request.url:
-                raise HTTPException(status_code=400, detail="url is required for Web source.")
-            logger.info(f"Crawling Web: {request.url} (max pages: {request.max_pages})")
-            scraped_text = crawl_site(request.url, request.max_pages, log_callback=log_step)
+        if request.source_type != "Web":
+             raise HTTPException(status_code=400, detail="Only 'Web' source type is supported.")
+
+        if not request.url:
+            raise HTTPException(status_code=400, detail="url is required for Web source.")
+        
+        logger.info(f"Crawling Web: {request.url} (max pages: {request.max_pages})")
+        scraped_text = crawl_site(request.url, request.max_pages, log_callback=log_step)
         
         if not scraped_text:
             logger.warning(f"No content found for {request.source_type}")
